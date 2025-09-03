@@ -14,17 +14,25 @@ export function Header() {
         <div className="flex justify-between items-center h-48">
           <div className="flex-1 flex justify-center">
             <Link href="/" className="flex items-center justify-center">
-              <img 
-                src={logoImage} 
-                alt="Legal Web Doc Logo" 
+              <img
+                src={logoImage}
+                alt="Legal Web Doc Logo"
                 className="h-50 w-50 object-contain"
                 style={{width: '200px', height: '200px'}}
               />
             </Link>
           </div>
           
-          {/* Free Button */}
-          <nav className="flex items-center">
+          <nav className="flex items-center space-x-4">
+            <Link href="/about">
+              <Button variant="ghost">About</Button>
+            </Link>
+            <Link href="/blog">
+              <Button variant="ghost">Blog</Button>
+            </Link>
+            <Link href="/contact">
+              <Button variant="ghost">Contact</Button>
+            </Link>
             <Dialog open={isFreeDialogOpen} onOpenChange={setIsFreeDialogOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" className="text-primary border-primary hover:bg-primary hover:text-white">
@@ -35,6 +43,39 @@ export function Header() {
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2 text-xl">
                     <Heart className="h-6 w-6 text-red-500" aria-hidden="true" />
+                    TysunMic - Free Forever
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <p id="free-dialog-description" className="text-lg font-medium text-center text-primary">
+                    Freeware for all, all the time, and everytime.
+                  </p>
+                  <p className="text-muted-foreground text-center">
+                    Use a TysunMic website and its guaranteed to be free.
+                  </p>
+                  <div className="bg-muted p-4 rounded-lg">
+                    <p className="text-sm text-center">
+                      If you have any questions, concerns, and if there is something not working on the site:
+                    </p>
+                    <p className="text-center font-medium text-primary mt-2">
+                      Tserver@internetclock.com
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => setIsFreeDialogOpen(false)}
+                    className="w-full"
+                  >
+                    Amazing! Let's Generate Documents
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </nav>
+        </div>
+      </div>
+    </header>
+  );
+}                    <Heart className="h-6 w-6 text-red-500" aria-hidden="true" />
                     TysunMic - Free Forever
                   </DialogTitle>
                 </DialogHeader>
