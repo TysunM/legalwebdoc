@@ -1,0 +1,4 @@
+# ads.txt for legalwebdoc.com - Google AdSense
+google.com, pub-8305971032153246, DIRECT, f08c47fec0942fa0
+
+# Last updated: 2025-08-30
