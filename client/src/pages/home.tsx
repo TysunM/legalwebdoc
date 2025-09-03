@@ -1,15 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { generatePDF } from "@/lib/pdf-generator";
 import { Header } from "@/components/ui/header";
 import { Footer } from "@/components/ui/footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Chat } from "@/components/ui/chat";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, FileText, Shield, Cookie } from "lucide-react";
-import { Progress } from "@/components/ui/progress";
+import { Loader2, FileText, Shield, Cookie, BookOpen, FileWarning, Handshake, EyeOff, UserCheck, Truck, Copyright, Landmark, UserPlus, HeartPulse } from "lucide-react";
+import { articles } from "@/content/articles";
+import { Link } from "wouter";
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -37,32 +37,27 @@ interface Document {
 export default function Home() {
   const { toast } = useToast();
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [generatedDocument, setGeneratedDocument] = useState<Document | null>(null);
-  const [generationProgress, setGenerationProgress] = useState(0);
   const [selectedDocType, setSelectedDocType] = useState<string | null>(null);
 
   const documentTypes = [
-    { 
-      id: "privacy-policy", 
-      name: "Privacy Policy", 
-      icon: Shield,
-      description: "GDPR, CCPA compliant privacy policies"
-    },
-    { 
-      id: "terms-of-service", 
-      name: "Terms of Service", 
-      icon: FileText,
-      description: "Comprehensive terms that protect your business"
-    },
-    { 
-      id: "cookie-consent", 
-      name: "Cookie Consent", 
-      icon: Cookie,
-      description: "GDPR-compliant cookie consent banners"
-    }
+    { id: "privacy-policy", name: "Privacy Policy", icon: Shield, description: "For websites and apps that collect user data." },
+    { id: "terms-of-service", name: "Terms of Service", icon: FileText, description: "Set the rules for using your service." },
+    { id: "cookie-consent", name: "Cookie Policy", icon: Cookie, description: "Inform users about the cookies your site uses." },
+    { id: "disclaimer", name: "Disclaimer", icon: FileWarning, description: "Limit your legal liability for the information on your site." },
+    { id: "acceptable-use-policy", name: "Acceptable Use Policy", icon: UserCheck, description: "Define acceptable behavior for users." },
+    { id: "refund-policy", name: "Refund Policy", icon: Handshake, description: "Outline your terms for refunds and returns." },
+    { id: "eula", name: "EULA", icon: BookOpen, description: "License your software or mobile app to users." },
+    { id: "affiliate-agreement", name: "Affiliate Agreement", icon: Handshake, description: "Set the terms for your affiliate program." },
+    { id: "nda", name: "NDA", icon: EyeOff, description: "Protect your confidential business information." },
+    { id: "service-agreement", name: "Service Agreement", icon: FileText, description: "For freelancers and service-based businesses." },
+    { id: "independent-contractor-agreement", name: "Independent Contractor Agreement", icon: UserCheck, description: "For hiring freelancers and contractors." },
+    { id: "shipping-policy", name: "Shipping Policy", icon: Truck, description: "Provide clarity on your shipping logistics." },
+    { id: "dmca-policy", name: "DMCA Policy", icon: Copyright, description: "Address copyright infringement claims." },
+    { id: "impressum", name: "Impressum", icon: Landmark, description: "A legal requirement for sites in German-speaking countries." },
+    { id: "guest-blogger-agreement", name: "Guest Blogger Agreement", icon: UserPlus, description: "For websites that accept guest posts." },
+    { id: "health-disclaimer", name: "Health Disclaimer", icon: HeartPulse, description: "For sites with health or medical information." },
   ];
 
-  // Create or get existing chat session
   const createSessionMutation = useMutation({
     mutationFn: async (documentType: string) => {
       const response = await apiRequest("POST", "/api/chat/session", { documentType });
@@ -80,13 +75,11 @@ export default function Home() {
     },
   });
 
-  // Get chat session data
   const { data: session, refetch: refetchSession } = useQuery<ChatSession>({
     queryKey: ["/api/chat/session", sessionId],
     enabled: !!sessionId,
   });
 
-  // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async ({ sessionId, message }: { sessionId: string; message: string }) => {
       const response = await apiRequest("POST", "/api/chat/message", { sessionId, message });
@@ -104,53 +97,6 @@ export default function Home() {
     },
   });
 
-  // Generate document mutation
-  const generateDocumentMutation = useMutation({
-    mutationFn: async (sessionId: string) => {
-      // Start progress simulation
-      setGenerationProgress(0);
-      const progressInterval = setInterval(() => {
-        setGenerationProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(progressInterval);
-            return 90; // Stop at 90% until completion
-          }
-          return prev + Math.random() * 15; // Random increments
-        });
-      }, 1000);
-
-      try {
-        const response = await apiRequest("POST", "/api/documents/generate", { sessionId });
-        clearInterval(progressInterval);
-        setGenerationProgress(100);
-        return response.json();
-      } catch (error) {
-        clearInterval(progressInterval);
-        setGenerationProgress(0);
-        throw error;
-      }
-    },
-    onSuccess: (data) => {
-      setTimeout(() => {
-        setGeneratedDocument(data.document);
-        setGenerationProgress(0);
-        queryClient.invalidateQueries({ queryKey: ["/api/documents"] });
-        toast({
-          title: "Success",
-          description: "Document generated successfully!",
-        });
-      }, 500);
-    },
-    onError: () => {
-      setGenerationProgress(0);
-      toast({
-        title: "Error",
-        description: "Failed to generate document. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
   const handleDocumentTypeSelect = (docType: string) => {
     setSelectedDocType(docType);
     createSessionMutation.mutate(docType);
@@ -162,42 +108,11 @@ export default function Home() {
     }
   };
 
-  const handleGenerateDocument = () => {
-    if (sessionId) {
-      generateDocumentMutation.mutate(sessionId);
-    }
-  };
-
-  const handleDownload = () => {
-    if (generatedDocument) {
-      try {
-        generatePDF(generatedDocument);
-        toast({
-          title: "✅ Download Started",
-          description: "Your free legal document PDF is being downloaded to your device.",
-          className: "bg-primary text-primary-foreground border-primary/20",
-        });
-      } catch (error) {
-        toast({
-          title: "Download Failed",
-          description: "There was an error generating your PDF. Please try again.",
-          variant: "destructive",
-        });
-      }
-    }
-  };
-
-  const getDocumentTypeTitle = (type: string) => {
-    const doc = documentTypes.find(d => d.id === type);
-    return doc ? doc.name : "Legal Document";
-  };
-
   return (
     <div className="min-h-screen bg-background">
       <Header />
       
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Main Title */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center mb-12">
           <h1 className="text-4xl lg:text-6xl font-bold text-white leading-tight mb-6">
             Generate Legal Documents
@@ -209,85 +124,55 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Main Chat Interface */}
-        <div className="max-w-4xl mx-auto">
-          {/* Chat Interface */}
-          <Card className="h-[600px] flex flex-col bg-muted/50 border-primary/20">
-            <CardHeader>
-              <CardTitle className="flex items-center text-white">
-                <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                AI Legal Assistant {selectedDocType ? `- ${getDocumentTypeTitle(selectedDocType)}` : ''}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1 overflow-hidden">
-              {!selectedDocType ? (
-                /* Document Type Selection Inside Chat */
-                <div className="flex flex-col h-full">
-                  <div className="mb-6">
-                    <div className="bg-white/90 backdrop-blur-sm rounded-2xl rounded-tl-md px-4 py-3 max-w-[80%] border border-primary/20 shadow-md mb-4">
-                      <p className="text-sm text-primary font-medium">
-                        Hi! I'm your AI Legal Assistant. I can help you create professional legal documents for your website. 
-                        Which type of document do you need?
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-3 flex-1">
-                    {documentTypes.map((doc) => {
-                      const IconComponent = doc.icon;
-                      return (
-                        <Card 
-                          key={doc.id} 
-                          className="cursor-pointer hover:shadow-lg transition-all hover:scale-[1.02] bg-primary/5 border-primary/30 hover:border-primary/50"
-                          onClick={() => handleDocumentTypeSelect(doc.id)}
-                        >
-                          <CardContent className="p-4 flex items-center space-x-4">
-                            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                              <IconComponent className="h-6 w-6 text-primary" />
-                            </div>
-                            <div className="flex-1">
-                              <h3 className="text-lg font-semibold text-white mb-1">{doc.name}</h3>
-                              <p className="text-white/70 text-sm">{doc.description}</p>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : session ? (
-                <Chat
-                  messages={session.messages}
-                  onSendMessage={handleSendMessage}
-                  isLoading={sendMessageMutation.isPending}
-                  isCompleted={session.isCompleted}
-                />
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        <div className="mb-16">
+          <h2 className="text-3xl font-bold text-center mb-8">Choose Your Document</h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {documentTypes.map((doc) => {
+              const IconComponent = doc.icon;
+              return (
+                <Link key={doc.id} href={`/generator/${doc.id}`}>
+                  <a className="block">
+                    <Card className="h-full hover:border-primary/50 transition-colors">
+                      <CardContent className="p-6 text-center">
+                        <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4">
+                          <IconComponent className="h-8 w-8 text-primary" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-white mb-1">{doc.name}</h3>
+                        <p className="text-white/70 text-sm">{doc.description}</p>
+                      </CardContent>
+                    </Card>
+                  </a>
+                </Link>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Back to document selection */}
-        {selectedDocType && (
-          <div className="text-center mt-8">
-            <Button 
-              variant="outline" 
-              onClick={() => {
-                setSelectedDocType(null);
-                setSessionId(null);
-                setGeneratedDocument(null);
-              }}
-              className="text-primary border-primary hover:bg-primary hover:text-white"
-            >
-              Choose Different Document Type
-            </Button>
+        <div className="mb-16">
+          <h2 className="text-3xl font-bold text-center mb-8">From Our Blog</h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {articles.slice(0, 3).map((article) => (
+              <Link key={article.slug} href={`/blog/${article.slug}`}>
+                <a className="block">
+                  <Card className="h-full hover:border-primary/50 transition-colors">
+                    <CardContent className="p-6">
+                      <h2 className="text-xl font-bold mb-2">{article.title}</h2>
+                      <p className="text-muted-foreground">
+                        {article.description}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </a>
+              </Link>
+            ))}
           </div>
-        )}
-      </div>
+          <div className="text-center mt-8">
+            <Link href="/blog">
+              <Button variant="outline">Read More Articles</Button>
+            </Link>
+          </div>
+        </div>
+      </main>
 
       <Footer />
     </div>
