@@ -6,6 +6,10 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Generator from "@/pages/generator";
+import About from "@/pages/about";
+import Contact from "@/pages/contact";
+import Blog from "@/pages/blog";
+import ArticlePage from "@/pages/blog/[slug]";
 
 function Router() {
   return (
@@ -18,6 +22,10 @@ function Router() {
         <Switch>
           <Route path="/" component={Home} />
           <Route path="/generator/:type" component={Generator} />
+          <Route path="/about" component={About} />
+          <Route path="/contact" component={Contact} />
+          <Route path="/blog" component={Blog} />
+          <Route path="/blog/:slug" component={ArticlePage} />
           <Route component={NotFound} />
         </Switch>
       </div>
