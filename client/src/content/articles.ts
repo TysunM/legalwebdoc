@@ -350,4 +350,4 @@ export const articles = [
       </ul>
     `,
     },
-  ];
+];
